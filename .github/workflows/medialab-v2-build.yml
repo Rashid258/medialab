@@ -1,4 +1,4 @@
-name: MediaLab V3 - Java APK
+name: MediaLab V3.1 - Java APK
 on:
   workflow_dispatch:
 
@@ -9,44 +9,42 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-
-      - name: Restore MediaLab V3 sources
+      - name: Unpack MediaLab V3.1 source
         shell: bash
         run: |
           set -euo pipefail
-          unzip -tqq MediaLab_V3_Java_Source.zip
-          unzip -qo MediaLab_V3_Java_Source.zip
-          test -f app/src/main/java/pk/tearnova/medialab/MainActivity.java
-
+          unzip -tqq MediaLab_V31_Java_Source.zip
+          unzip -qo MediaLab_V31_Java_Source.zip
+          test -f app/src/main/java/pk/tearnova/medialab/DownloadService.java
+          test -f app/src/main/java/pk/tearnova/medialab/ResumePolicy.java
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
+      - name: Test resume logic without Android SDK
+        run: |
+          mkdir -p /tmp/range-test
+          javac -d /tmp/range-test app/src/main/java/pk/tearnova/medialab/ResumePolicy.java tests/pk/tearnova/medialab/ResumePolicyTest.java
+          java -cp /tmp/range-test pk.tearnova.medialab.ResumePolicyTest
       - uses: android-actions/setup-android@v4
         with:
           packages: 'platform-tools'
-
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-
-      - name: Install Android build SDK
+      - name: Install Android API 36
         run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
-
-      - name: Build debug APK
+      - name: Build Android debug APK
         run: gradle :app:assembleDebug --no-daemon --stacktrace
-
-      - name: Verify APK signature and manifest
+      - name: Verify signature and package
         shell: bash
         run: |
           set -euo pipefail
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose app/build/outputs/apk/debug/app-debug.apk
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | head -15
-
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | head -20
       - uses: actions/upload-artifact@v4
         with:
-          name: MediaLab-V3-Debug-APK
+          name: MediaLab-V31-Debug-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
