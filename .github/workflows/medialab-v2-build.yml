@@ -16,6 +16,7 @@ jobs:
           test -f MediaLab_V2_Java_Source.zip
           unzip -tqq MediaLab_V2_Java_Source.zip
           unzip -qo MediaLab_V2_Java_Source.zip
+          sed -i 's/setTextAllCaps(false)/setAllCaps(false)/' app/src/main/java/pk/tearnova/medialab/Palette.java
           test -f app/src/main/java/pk/tearnova/medialab/MainActivity.java
 
       - uses: actions/setup-java@v4
